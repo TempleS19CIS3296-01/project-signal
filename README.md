@@ -20,3 +20,6 @@ https://github.com/signalapp/Signal-Android
 https://github.com/signalapp/Signal-Android/issues/8674
 
 https://signal.org/
+
+## Goals and Milestones
+
