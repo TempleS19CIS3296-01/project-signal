@@ -31,3 +31,5 @@ https://signal.org/
 #### Work Plan
 
 We plan to use an Agile approach to develop this project. Most of our development will involve editing existing code and fixing bugs. We will meet frequently in person and keep constant communication online in order to keep the pace of development. This development approach will minimize overhead resulting from documenting the changes in our code.
+
+To start, we are going to work in pairs to work on single issues or feature requests- Mike and Jed, Sam and Brian. This will give us better focus on small tasks. Also, Mike and Sam have prior experience with Android, so this approach will allow all team members to become familiar with the framework faster.
