@@ -23,3 +23,11 @@ https://signal.org/
 
 ## Goals and Milestones
 
+* Configure the Android SDK to develop Signal
+* Identify bugs and/or feature requests that are the best candidates for us to work on
+* Work in pairs to fix the issues
+* Update our shared repo with the changed files
+
+#### Work Plan
+
+We plan to use an Agile approach to develop this project. Most of our development will involve editing existing code and fixing bugs. We will meet frequently in person and keep constant communication online in order to keep the pace of development. This development approach will minimize overhead resulting from documenting the changes in our code.
