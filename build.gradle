@@ -457,13 +457,13 @@ def signProductionRelease = { variant ->
     String apkName    = variant.outputs[0].outputFile.name
     File   inputFile  = new File(variant.outputs[0].outputFile.path);
     File   outputFile = new File(variant.outputs[0].outputFile.parent, apkName.replace("-unsigned", ""));
-
+/*
     new ApkSignerUtil("sun.security.pkcs11.SunPKCS11",
                       "pkcs11.config",
                       "PKCS11",
                       "file:pkcs11.password").calculateSignature(inputFile.getAbsolutePath(),
                                                                  outputFile.getAbsolutePath());
-
+*/
     inputFile.delete();
     return outputFile
 }

@@ -1,69 +1,35 @@
-# Signal Android 
+# Signal - Fast, Simple, Secure Messaging
+_Project Signal Outline_
 
-Signal is a messaging app for simple private communication with friends.
+## Project Abstract
+Signal by Open Whisper Systems is a private messaging app available on Android and iOS devices, as well as on desktop. The open source repository in question is for the Android version of the app, as the majority of the code is in Java. The repo for the iOS version is mostly in Objective-C, while the repo for the desktop version is in JavaScript, with support for Windows, Mac, and Linux. Boasting the tagline "privacy that fits in your pocket", Signal is a fast, simple, and secure messaging service with extra emphasis on secure messaging. As an open source project supported by grants and donations, Signal has already been released in the app stores; however, the project is not yet complete, as there are bugs and issues to address within its various versions.
 
-Signal uses your phone's data connection (WiFi/3G/4G) to communicate securely, optionally supports plain SMS/MMS to function as a unified messenger, and can also encrypt the stored messages on your phone.
+![Use Case Image](SignalUseCase.png)
 
-Currently available on the Play store.
+## Project Relevance
+This project is relevant to the course in the aspects of Version Control _(seeing how the code was created and revised over time, thus allowing us to identify the bugs as they appeared over time)_, Debugging _(being able to understand the code that other contributers have provided and being able to revise them)_, and Issue Tracking _(proposing issues that have been noticed through use of the project / debugging, as well as working on resolving issues that have already been noticed)_. Being an open source app, Signal gives us the opportunity to contribute to the design, development, and maintenance aspect of the project. Issues that have been brought up in the repository range from UI bugs to network connectivity and transmission issues. 
 
-<a href='https://play.google.com/store/apps/details?id=org.thoughtcrime.securesms&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' height='80px'/></a>
+## Conceptual Design
+A contribution that I would like to take part in is to resolve one of the issues. Issue number 8674, _Time of received message is shown in local time of sender instead of receiver_ was the issue I had in mind. The bug was verified from another user that the issue exists not just on a local level, meaning that other users are having the same issue. The user was sending messages to someone from a different time zone, and the timestamps of the replies he received were the timestamps of the other time zone, not his. More details can be found in the issue itself (link provided in the background section below).
 
-## Contributing Bug reports
-We use GitHub for bug tracking. Please search the existing issues for your bug and create a new one if the issue is not yet tracked!
+For this project, I would need interested teammates preferably with Android devices, although having iOS devices would also come in handy in order to cover all the bases. In the case that this issue has been resolved in advance, I would still be interested in pursuing another open issue.
 
-https://github.com/signalapp/Signal-Android/issues
+## Background
+https://github.com/signalapp/Signal-Android
 
-## Joining the Beta
-Want to live life on the bleeding edge and help out with testing?
+https://github.com/signalapp/Signal-Android/issues/8674
 
-You can subscribe to Signal Android Beta releases here:
-https://play.google.com/apps/testing/org.thoughtcrime.securesms
- 
-If you're interested in a life of peace and tranquility, stick with the standard releases.
+https://signal.org/
 
-## Contributing Translations
-Interested in helping to translate Signal? Contribute here:
+## Goals and Milestones
 
-https://www.transifex.com/projects/p/signal-android/
+* Configure the Android SDK to develop Signal
+* Identify bugs and/or feature requests that are the best candidates for us to work on
+* Work in pairs to fix the issues
+* Update our shared repo with the changed files
 
-## Contributing Code
-Instructions on how to setup your development environment and build Signal can be found in  [BUILDING.md](https://github.com/signalapp/Signal-Android/blob/master/BUILDING.md).
+#### Work Plan
 
-If you're new to the Signal codebase, we recommend going through our issues and picking out a simple bug to fix (check the "easy" label in our issues) in order to get yourself familiar. Also please have a look at the [CONTRIBUTING.md](https://github.com/signalapp/Signal-Android/blob/master/CONTRIBUTING.md), that might answer some of your questions.
+We plan to use an Agile approach to develop this project. Most of our development will involve editing existing code and fixing bugs. We will meet frequently in person and keep constant communication online in order to keep the pace of development. This development approach will minimize overhead resulting from documenting the changes in our code.
 
-For larger changes and feature ideas, we ask that you propose it on the [unofficial Community Forum](https://community.signalusers.org) for a high-level discussion with the wider community before implementation.
-
-## Contributing Ideas
-Have something you want to say about Open Whisper Systems projects or want to be part of the conversation? Get involved in the [community forum](https://community.signalusers.org).
-
-Help
-====
-## Support
-For troubleshooting and questions, please visit our support center!
-
-https://support.signal.org/
-
-## Documentation
-Looking for documentation? Check out the wiki!
-
-https://github.com/signalapp/Signal-Android/wiki
-
-# Legal things
-## Cryptography Notice
-
-This distribution includes cryptographic software. The country in which you currently reside may have restrictions on the import, possession, use, and/or re-export to another country, of encryption software.
-BEFORE using any encryption software, please check your country's laws, regulations and policies concerning the import, possession, or use, and re-export of encryption software, to see if this is permitted.
-See <http://www.wassenaar.org/> for more information.
-
-The U.S. Government Department of Commerce, Bureau of Industry and Security (BIS), has classified this software as Export Commodity Control Number (ECCN) 5D002.C.1, which includes information security software using or performing cryptographic functions with asymmetric algorithms.
-The form and manner of this distribution makes it eligible for export under the License Exception ENC Technology Software Unrestricted (TSU) exception (see the BIS Export Administration Regulations, Section 740.13) for both object code and source code.
-
-## License
-
-Copyright 2011 Whisper Systems
-
-Copyright 2013-2017 Open Whisper Systems
-
-Licensed under the GPLv3: http://www.gnu.org/licenses/gpl-3.0.html
-
-Google Play and the Google Play logo are trademarks of Google Inc.
+To start, we are going to work in pairs to work on single issues or feature requests- Mike and Jed, Sam and Brian. This will give us better focus on small tasks. Also, Mike and Sam have prior experience with Android, so this approach will allow all team members to become familiar with the framework faster.
