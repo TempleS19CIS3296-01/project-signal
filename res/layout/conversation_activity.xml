@@ -15,6 +15,11 @@
         android:gravity="bottom"
         android:orientation="vertical"
         android:paddingTop="?attr/actionBarSize">
+        
+        <ImageView
+            android:id="@+id/conversation_image_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
         <ViewStub
             android:id="@+id/group_share_profile_view_stub"

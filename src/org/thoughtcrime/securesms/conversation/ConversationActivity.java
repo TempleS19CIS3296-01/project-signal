@@ -68,12 +68,14 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.annimon.stream.Stream;
 import com.google.android.gms.location.places.ui.PlacePicker;
+import com.squareup.picasso.Picasso;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -314,6 +316,8 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private final IdentityRecordList identityRecords = new IdentityRecordList();
   private final DynamicTheme       dynamicTheme    = new DynamicTheme();
   private final DynamicLanguage    dynamicLanguage = new DynamicLanguage();
+  private String url = "https://media.mojang.com/blog-image/2c34ca1217c7d95e76a6f8d646adf9208f78145a/blogmcnet.png";
+
 
   @Override
   protected void onPreCreate() {
@@ -327,6 +331,12 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
 
     supportRequestWindowFeature(WindowCompat.FEATURE_ACTION_BAR_OVERLAY);
     setContentView(R.layout.conversation_activity);
+    ImageView imageBox = findViewById(R.id.conversation_image_container);
+    Picasso.get()
+            .load(url)
+            .fit()
+            .centerCrop()
+            .into(imageBox);
 
     TypedArray typedArray = obtainStyledAttributes(new int[] {R.attr.conversation_background});
     int color = typedArray.getColor(5, Color.RED);
