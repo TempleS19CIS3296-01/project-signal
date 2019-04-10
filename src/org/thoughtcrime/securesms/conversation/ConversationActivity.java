@@ -33,6 +33,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -331,17 +332,20 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
 
     supportRequestWindowFeature(WindowCompat.FEATURE_ACTION_BAR_OVERLAY);
     setContentView(R.layout.conversation_activity);
-    ImageView imageBox = findViewById(R.id.conversation_image_container);
-    Picasso.get()
-            .load(url)
-            .fit()
-            .centerCrop()
-            .into(imageBox);
+    //ImageView imageBox = findViewById(R.id.conversation_image_container);
+    //Picasso.get()
+       //     .load(url)
+      //      .fit()
+     //       .centerCrop()
+     //       .into(imageBox);
+    //imageBox.setAlpha((float) 0.5);
 
     TypedArray typedArray = obtainStyledAttributes(new int[] {R.attr.conversation_background});
     int color = typedArray.getColor(5, Color.RED);
     typedArray.recycle();
-    getWindow().getDecorView().setBackgroundColor(color);
+    Drawable d = getResources().getDrawable(R.drawable.tester);
+    getWindow().getDecorView().setBackgroundDrawable(d);
+    //getWindow().getDecorView().setBackgroundColor(color);
 
     fragment = initFragment(R.id.fragment_content, new ConversationFragment(), dynamicLanguage.getCurrentLocale());
 
