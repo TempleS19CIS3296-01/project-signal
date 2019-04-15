@@ -38,6 +38,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Vibrator;
 import android.provider.Browser;
 import android.provider.ContactsContract;
@@ -245,7 +246,10 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
                ComposeText.CursorPositionChangedListener,
                ConversationSearchBottomBar.EventListener
 {
+  private static final String LOG_TAG = ">>ConversationActivity";
   private static final String TAG = ConversationActivity.class.getSimpleName();
+  private Handler handler = new Handler();
+
 
   public static final String ADDRESS_EXTRA           = "address";
   public static final String THREAD_ID_EXTRA         = "thread_id";
@@ -314,6 +318,16 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private final IdentityRecordList identityRecords = new IdentityRecordList();
   private final DynamicTheme       dynamicTheme    = new DynamicTheme();
   private final DynamicLanguage    dynamicLanguage = new DynamicLanguage();
+
+  private Runnable getToastRunnable(String message) {
+    return new Runnable() {
+      @Override
+      public void run() {
+        Log.d(LOG_TAG, "Toast runnable posted");
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT);
+      }
+    };
+  }
 
   @Override
   protected void onPreCreate() {
@@ -594,8 +608,14 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
 
   @Override
   public boolean onPrepareOptionsMenu(Menu menu) {
+
+    Log.d(LOG_TAG, "onPrepareOptionsMenu() called");
+    Toast.makeText(this, "Menu prepared", Toast.LENGTH_SHORT).show();
+
     MenuInflater inflater = this.getMenuInflater();
     menu.clear();
+
+    inflater.inflate(R.menu.conversation_background, menu);
 
     if (isSecureText) {
       if (recipient.getExpireMessages() > 0) {
@@ -713,6 +733,10 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
     super.onOptionsItemSelected(item);
+
+    Log.d(LOG_TAG, "onOptionsItemSelected() called");
+    Toast.makeText(this, "You selected " + getResources().getResourceEntryName(item.getItemId()), Toast.LENGTH_SHORT).show();
+
     switch (item.getItemId()) {
     case R.id.menu_call_secure:               handleDial(getRecipient(), true);                  return true;
     case R.id.menu_call_insecure:             handleDial(getRecipient(), false);                 return true;
@@ -732,6 +756,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     case R.id.menu_conversation_settings:     handleConversationSettings();                      return true;
     case R.id.menu_expiring_messages_off:
     case R.id.menu_expiring_messages:         handleSelectMessageExpiration();                   return true;
+    case R.id.menu_change_background:         handleChangeBackground();                          return true;
     case android.R.id.home:                   handleReturnToConversationList();                  return true;
     }
 
@@ -1195,6 +1220,13 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     calculateCharactersRemaining();
     supportInvalidateOptionsMenu();
     setBlockedUserState(recipient, isSecureText, isDefaultSms);
+  }
+
+  private void handleChangeBackground() {
+    Log.d(LOG_TAG, "handleChangeBackground() called");
+    handler.postDelayed(getToastRunnable("Selected " + getString(R.string.conversation_change_background) +
+            " in overflow menu"), 5000);
+
   }
 
   ///// Initializers

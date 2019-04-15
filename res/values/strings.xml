@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="conversation_change_background">Select background</string>
     <string name="app_name">Signal</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
