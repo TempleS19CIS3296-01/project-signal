@@ -38,6 +38,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Vibrator;
 import android.provider.Browser;
 import android.provider.ContactsContract;
@@ -247,6 +248,8 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
 {
   private static final String LOG_TAG = ">>ConversationActivity";
   private static final String TAG = ConversationActivity.class.getSimpleName();
+  private Handler handler = new Handler();
+
 
   public static final String ADDRESS_EXTRA           = "address";
   public static final String THREAD_ID_EXTRA         = "thread_id";
@@ -315,6 +318,16 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private final IdentityRecordList identityRecords = new IdentityRecordList();
   private final DynamicTheme       dynamicTheme    = new DynamicTheme();
   private final DynamicLanguage    dynamicLanguage = new DynamicLanguage();
+
+  private Runnable getToastRunnable(String message) {
+    return new Runnable() {
+      @Override
+      public void run() {
+        Log.d(LOG_TAG, "Toast runnable posted");
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT);
+      }
+    };
+  }
 
   @Override
   protected void onPreCreate() {
@@ -1211,8 +1224,8 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
 
   private void handleChangeBackground() {
     Log.d(LOG_TAG, "handleChangeBackground() called");
-    Toast.makeText(this, "Selected " + getString(R.string.conversation_change_background) +
-            " in overflow menu", Toast.LENGTH_SHORT);
+    handler.postDelayed(getToastRunnable("Selected " + getString(R.string.conversation_change_background) +
+            " in overflow menu"), 5000);
 
   }
 
