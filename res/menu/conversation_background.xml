@@ -3,7 +3,7 @@
     <item
         android:id="@+id/menu_change_background"
         android:title="@string/conversation_change_background">
-        
+
     </item>
 
 

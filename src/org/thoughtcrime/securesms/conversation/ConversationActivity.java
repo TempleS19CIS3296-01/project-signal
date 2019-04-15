@@ -602,6 +602,8 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     MenuInflater inflater = this.getMenuInflater();
     menu.clear();
 
+    inflater.inflate(R.menu.conversation_background, menu);
+
     if (isSecureText) {
       if (recipient.getExpireMessages() > 0) {
         inflater.inflate(R.menu.conversation_expiring_on, menu);
@@ -741,6 +743,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     case R.id.menu_conversation_settings:     handleConversationSettings();                      return true;
     case R.id.menu_expiring_messages_off:
     case R.id.menu_expiring_messages:         handleSelectMessageExpiration();                   return true;
+    case R.id.menu_change_background:         handleChangeBackground();                          return true;
     case android.R.id.home:                   handleReturnToConversationList();                  return true;
     }
 
@@ -1207,6 +1210,9 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   }
 
   private void handleChangeBackground() {
+    Log.d(LOG_TAG, "handleChangeBackground() called");
+    Toast.makeText(this, "Selected " + getString(R.string.conversation_change_background) +
+            " in overflow menu", Toast.LENGTH_SHORT);
 
   }
 
