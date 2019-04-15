@@ -245,6 +245,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
                ComposeText.CursorPositionChangedListener,
                ConversationSearchBottomBar.EventListener
 {
+  private static final String LOG_TAG = ">>ConversationActivity";
   private static final String TAG = ConversationActivity.class.getSimpleName();
 
   public static final String ADDRESS_EXTRA           = "address";
@@ -594,6 +595,10 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
 
   @Override
   public boolean onPrepareOptionsMenu(Menu menu) {
+
+    Log.d(LOG_TAG, "onPrepareOptionsMenu() called");
+    Toast.makeText(this, "Menu prepared", Toast.LENGTH_SHORT).show();
+
     MenuInflater inflater = this.getMenuInflater();
     menu.clear();
 
@@ -713,6 +718,10 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
     super.onOptionsItemSelected(item);
+
+    Log.d(LOG_TAG, "onOptionsItemSelected() called");
+    Toast.makeText(this, "You selected " + getResources().getResourceEntryName(item.getItemId()), Toast.LENGTH_SHORT).show();
+
     switch (item.getItemId()) {
     case R.id.menu_call_secure:               handleDial(getRecipient(), true);                  return true;
     case R.id.menu_call_insecure:             handleDial(getRecipient(), false);                 return true;
@@ -1195,6 +1204,10 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     calculateCharactersRemaining();
     supportInvalidateOptionsMenu();
     setBlockedUserState(recipient, isSecureText, isDefaultSms);
+  }
+
+  private void handleChangeBackground() {
+
   }
 
   ///// Initializers
