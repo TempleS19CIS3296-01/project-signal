@@ -12,6 +12,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.thoughtcrime.securesms.ApplicationContext;
+import org.thoughtcrime.securesms.database.Address;
+import org.thoughtcrime.securesms.database.Database;
 import org.thoughtcrime.securesms.database.DatabaseFactory;
 import org.thoughtcrime.securesms.database.RecipientDatabase;
 import org.thoughtcrime.securesms.database.SmsDatabase;
@@ -60,15 +62,17 @@ public class OutgoingSMSObserver extends ContentObserver {
             Log.d("OutgoingSMSObserver", "Tried to post a sent message. with id " + id);
 
             // TODO Figure out how to handle this business
-            Log.d("OutgoingSMSObserver", message + " #################");
+            Log.d("OutgoingSMSObserver", message);
 
             long messageId = cursor.getLong(cursor.getColumnIndex("_id"));
-            //Recipient =
-            //OutgoingTextMessage outgoingTextMessage = new OutgoingTextMessage();
+            Address address = Address.fromExternal(context, smsNumber);
+            Recipient recipient = Recipient.from(context, address, true);
+            long allocatedThreadId = DatabaseFactory.getThreadDatabase(context).getThreadIdFor(recipient);
+            OutgoingTextMessage outgoingTextMessage = new OutgoingTextMessage(recipient, message, recipient.getDefaultSubscriptionId().or(-1));
 
-            //ApplicationContext.getInstance(context).getJobManager().add(new SmsSentJob(context, messageId, DELIVERED_SMS_ACTION, result, 1));
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-            //DatabaseFactory.getSmsDatabase().insertMessageOutbox(messageId, )
+            //Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+            long sentID = DatabaseFactory.getSmsDatabase(context).insertMessageOutbox(allocatedThreadId, outgoingTextMessage, true, System.currentTimeMillis(), null);
+            DatabaseFactory.getSmsDatabase(context).markAsSent(sentID, false);
 
             lastString = id;
         }
