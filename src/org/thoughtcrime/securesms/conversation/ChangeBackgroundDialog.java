@@ -100,7 +100,9 @@ public class ChangeBackgroundDialog extends AppCompatDialogFragment {
                     try {
                         Log.d(LOG_TAG, "onClick() called with urlString = " + urlString);
                         URL imageUrl = new URL(urlString);
+
                         listener.setBackgroundImage(imageUrl);
+
                         dismiss();
                     } catch (MalformedURLException e) {
                         inputLayout.setError(getString(R.string.error_malformed_url));
@@ -131,20 +133,6 @@ public class ChangeBackgroundDialog extends AppCompatDialogFragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {}
         });
-
-        inputLayout.getEditText().setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (!hasFocus) {
-                    hideKeyboard(v);
-                }
-            }
-        });
-    }
-
-    public void hideKeyboard(View view) {
-        InputMethodManager inputMethodManager =(InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
     public interface ChangeBackgroundListener {

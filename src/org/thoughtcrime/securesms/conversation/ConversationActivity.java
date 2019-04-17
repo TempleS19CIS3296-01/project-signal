@@ -19,6 +19,7 @@ package org.thoughtcrime.securesms.conversation;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -67,14 +68,18 @@ import android.view.View.OnFocusChangeListener;
 import android.view.View.OnKeyListener;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.annimon.stream.Stream;
 import com.google.android.gms.location.places.ui.PlacePicker;
+import com.squareup.picasso.Picasso;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -1241,6 +1246,21 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   public void setBackgroundImage(URL url) {
     Log.d(LOG_TAG, "setBackgroundImage() called with URL " + url.toString());
     Toast.makeText(ConversationActivity.this, "Entered " + url.toString(), Toast.LENGTH_SHORT).show();
+
+    closeKeyboard();
+
+    ImageView imageContainer = findViewById(R.id.conversation_background_imageview);
+    Picasso.get()
+            .load(url.toString())
+            .fit()
+            .centerCrop()
+            .into(imageContainer);
+  }
+
+  private void closeKeyboard() {
+    InputMethodManager inputManager = (InputMethodManager)this.getSystemService(Context.INPUT_METHOD_SERVICE);
+    inputManager.hideSoftInputFromWindow(this.getCurrentFocus().getWindowToken(), 0);
+
   }
 
   ///// Initializers

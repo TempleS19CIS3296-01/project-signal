@@ -41,7 +41,15 @@
             android:id="@+id/fragment_content"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_weight="1" >
+
+            <ImageView
+                android:id="@+id/conversation_background_imageview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="Background image container of the conversation"/>
+
+        </FrameLayout>
 
         <ViewStub
             android:id="@+id/attachment_editor_stub"
