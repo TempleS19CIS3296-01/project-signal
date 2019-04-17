@@ -19,6 +19,7 @@ package org.thoughtcrime.securesms.conversation;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -38,6 +39,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Vibrator;
 import android.provider.Browser;
 import android.provider.ContactsContract;
@@ -66,14 +68,18 @@ import android.view.View.OnFocusChangeListener;
 import android.view.View.OnKeyListener;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.annimon.stream.Stream;
 import com.google.android.gms.location.places.ui.PlacePicker;
+import com.squareup.picasso.Picasso;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -211,6 +217,7 @@ import org.whispersystems.libsignal.InvalidMessageException;
 import org.whispersystems.libsignal.util.guava.Optional;
 
 import java.io.IOException;
+import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
@@ -243,9 +250,15 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
                InputPanel.Listener,
                InputPanel.MediaListener,
                ComposeText.CursorPositionChangedListener,
-               ConversationSearchBottomBar.EventListener
+               ConversationSearchBottomBar.EventListener,
+               ChangeBackgroundDialog.ChangeBackgroundListener
+
 {
+  private static final String LOG_TAG = ">>ConversationActivity";
   private static final String TAG = ConversationActivity.class.getSimpleName();
+  private Handler handler = new Handler();
+  private static final String CHANGE_BACKGROUND_DIALOG_TAG = "myChangeBackgroundDialogTag";
+
 
   public static final String ADDRESS_EXTRA           = "address";
   public static final String THREAD_ID_EXTRA         = "thread_id";
@@ -315,6 +328,16 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private final DynamicTheme       dynamicTheme    = new DynamicTheme();
   private final DynamicLanguage    dynamicLanguage = new DynamicLanguage();
 
+  private Runnable getToastRunnable(String message) {
+    return new Runnable() {
+      @Override
+      public void run() {
+        Log.d(LOG_TAG, "Toast runnable posted");
+        Toast.makeText(ConversationActivity.this, message, Toast.LENGTH_SHORT);
+      }
+    };
+  }
+
   @Override
   protected void onPreCreate() {
     dynamicTheme.onCreate(this);
@@ -331,8 +354,16 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     TypedArray typedArray = obtainStyledAttributes(new int[] {R.attr.conversation_background});
     int color = typedArray.getColor(0, Color.WHITE);
     typedArray.recycle();
-
-    getWindow().getDecorView().setBackgroundColor(color);
+    //ImageView imageBox = findViewById(R.id.conversation_image_container);
+    //Picasso.get()
+         //.load(url)
+          //.fit()
+           //.centerCrop()
+           //.into(imageBox);
+    //imageBox.setAlpha((float) 0.5);
+    //Drawable d = getResources().getDrawable(R.drawable.tester);
+    //getWindow().getDecorView().setBackgroundDrawable(d);
+    //getWindow().getDecorView().setBackgroundColor(color);
 
     fragment = initFragment(R.id.fragment_content, new ConversationFragment(), dynamicLanguage.getCurrentLocale());
 
@@ -594,8 +625,14 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
 
   @Override
   public boolean onPrepareOptionsMenu(Menu menu) {
+
+    Log.d(LOG_TAG, "onPrepareOptionsMenu() called");
+    //Toast.makeText(this, "Menu prepared", Toast.LENGTH_SHORT).show();
+
     MenuInflater inflater = this.getMenuInflater();
     menu.clear();
+
+    inflater.inflate(R.menu.conversation_background, menu);
 
     if (isSecureText) {
       if (recipient.getExpireMessages() > 0) {
@@ -713,6 +750,10 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
     super.onOptionsItemSelected(item);
+
+    Log.d(LOG_TAG, "onOptionsItemSelected() called");
+    Toast.makeText(this, "You selected " + getResources().getResourceEntryName(item.getItemId()), Toast.LENGTH_SHORT).show();
+
     switch (item.getItemId()) {
     case R.id.menu_call_secure:               handleDial(getRecipient(), true);                  return true;
     case R.id.menu_call_insecure:             handleDial(getRecipient(), false);                 return true;
@@ -732,6 +773,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     case R.id.menu_conversation_settings:     handleConversationSettings();                      return true;
     case R.id.menu_expiring_messages_off:
     case R.id.menu_expiring_messages:         handleSelectMessageExpiration();                   return true;
+    case R.id.menu_change_background:         handleChangeBackground();                          return true;
     case android.R.id.home:                   handleReturnToConversationList();                  return true;
     }
 
@@ -1195,6 +1237,38 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     calculateCharactersRemaining();
     supportInvalidateOptionsMenu();
     setBlockedUserState(recipient, isSecureText, isDefaultSms);
+  }
+
+  private void handleChangeBackground() {
+    Log.d(LOG_TAG, "handleChangeBackground() called");
+    createChangeBackgroundDialog();
+  }
+
+  private void createChangeBackgroundDialog() {
+    Log.d(LOG_TAG, "createChangeBackgroundDialog() called");
+    ChangeBackgroundDialog changeBackgroundDialog = new ChangeBackgroundDialog();
+    changeBackgroundDialog.show(getSupportFragmentManager(), CHANGE_BACKGROUND_DIALOG_TAG);
+  }
+
+  @Override
+  public void setBackgroundImage(URL url) {
+    Log.d(LOG_TAG, "setBackgroundImage() called with URL " + url.toString());
+    Toast.makeText(ConversationActivity.this, "Entered " + url.toString(), Toast.LENGTH_SHORT).show();
+
+    closeKeyboard();
+
+    ImageView imageContainer = findViewById(R.id.conversation_background_imageview);
+    Picasso.get()
+            .load(url.toString())
+            .fit()
+            .centerCrop()
+            .into(imageContainer);
+  }
+
+  private void closeKeyboard() {
+    InputMethodManager inputManager = (InputMethodManager)this.getSystemService(Context.INPUT_METHOD_SERVICE);
+    inputManager.hideSoftInputFromWindow(this.getCurrentFocus().getWindowToken(), 0);
+
   }
 
   ///// Initializers
