@@ -354,13 +354,15 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     TypedArray typedArray = obtainStyledAttributes(new int[] {R.attr.conversation_background});
     int color = typedArray.getColor(0, Color.WHITE);
     typedArray.recycle();
-    ImageView imageBox = findViewById(R.id.conversation_image_container);
-    Picasso.get()
-         .load(url)
-          .fit()
-           .centerCrop()
-           .into(imageBox);
-    imageBox.setAlpha((float) 0.5);
+    //ImageView imageBox = findViewById(R.id.conversation_image_container);
+    //Picasso.get()
+         //.load(url)
+          //.fit()
+           //.centerCrop()
+           //.into(imageBox);
+    //imageBox.setAlpha((float) 0.5);
+    Drawable d = getResources().getDrawable(R.drawable.tester);
+    getWindow().getDecorView().setBackgroundDrawable(d);
     getWindow().getDecorView().setBackgroundColor(color);
 
     fragment = initFragment(R.id.fragment_content, new ConversationFragment(), dynamicLanguage.getCurrentLocale());
