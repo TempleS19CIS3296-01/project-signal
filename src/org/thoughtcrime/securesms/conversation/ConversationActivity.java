@@ -361,9 +361,9 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
            //.centerCrop()
            //.into(imageBox);
     //imageBox.setAlpha((float) 0.5);
-    Drawable d = getResources().getDrawable(R.drawable.tester);
-    getWindow().getDecorView().setBackgroundDrawable(d);
-    getWindow().getDecorView().setBackgroundColor(color);
+    //Drawable d = getResources().getDrawable(R.drawable.tester);
+    //getWindow().getDecorView().setBackgroundDrawable(d);
+    //getWindow().getDecorView().setBackgroundColor(color);
 
     fragment = initFragment(R.id.fragment_content, new ConversationFragment(), dynamicLanguage.getCurrentLocale());
 
