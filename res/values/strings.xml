@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="change_background_dialog_title">New Background Image</string>
+    <string name="button_cancel">Cancel</string>
+    <string name="button_submit">Submit</string>
+    <string name="error_malformed_url">Invalid URL</string>
+    <string name="change_background_hint">Enter a URL</string>
     <string name="conversation_change_background">Select background</string>
+
     <string name="app_name">Signal</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>

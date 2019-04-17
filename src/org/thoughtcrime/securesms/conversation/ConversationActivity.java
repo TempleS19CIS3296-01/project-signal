@@ -212,6 +212,7 @@ import org.whispersystems.libsignal.InvalidMessageException;
 import org.whispersystems.libsignal.util.guava.Optional;
 
 import java.io.IOException;
+import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
@@ -244,11 +245,14 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
                InputPanel.Listener,
                InputPanel.MediaListener,
                ComposeText.CursorPositionChangedListener,
-               ConversationSearchBottomBar.EventListener
+               ConversationSearchBottomBar.EventListener,
+               ChangeBackgroundDialog.ChangeBackgroundListener
+
 {
   private static final String LOG_TAG = ">>ConversationActivity";
   private static final String TAG = ConversationActivity.class.getSimpleName();
   private Handler handler = new Handler();
+  private static final String CHANGE_BACKGROUND_DIALOG_TAG = "myChangeBackgroundDialogTag";
 
 
   public static final String ADDRESS_EXTRA           = "address";
@@ -324,7 +328,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
       @Override
       public void run() {
         Log.d(LOG_TAG, "Toast runnable posted");
-        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT);
+        Toast.makeText(ConversationActivity.this, message, Toast.LENGTH_SHORT);
       }
     };
   }
@@ -610,7 +614,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   public boolean onPrepareOptionsMenu(Menu menu) {
 
     Log.d(LOG_TAG, "onPrepareOptionsMenu() called");
-    Toast.makeText(this, "Menu prepared", Toast.LENGTH_SHORT).show();
+    //Toast.makeText(this, "Menu prepared", Toast.LENGTH_SHORT).show();
 
     MenuInflater inflater = this.getMenuInflater();
     menu.clear();
@@ -1224,9 +1228,19 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
 
   private void handleChangeBackground() {
     Log.d(LOG_TAG, "handleChangeBackground() called");
-    handler.postDelayed(getToastRunnable("Selected " + getString(R.string.conversation_change_background) +
-            " in overflow menu"), 5000);
+    createChangeBackgroundDialog();
+  }
 
+  private void createChangeBackgroundDialog() {
+    Log.d(LOG_TAG, "createChangeBackgroundDialog() called");
+    ChangeBackgroundDialog changeBackgroundDialog = new ChangeBackgroundDialog();
+    changeBackgroundDialog.show(getSupportFragmentManager(), CHANGE_BACKGROUND_DIALOG_TAG);
+  }
+
+  @Override
+  public void setBackgroundImage(URL url) {
+    Log.d(LOG_TAG, "setBackgroundImage() called with URL " + url.toString());
+    Toast.makeText(ConversationActivity.this, "Entered " + url.toString(), Toast.LENGTH_SHORT).show();
   }
 
   ///// Initializers
