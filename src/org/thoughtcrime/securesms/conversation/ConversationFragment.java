@@ -1034,6 +1034,7 @@ public class ConversationFragment extends Fragment
 
     @Override
     public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+      Log.d(TAG, ">>onActionItemClicked() called");
       switch(item.getItemId()) {
         case R.id.menu_context_copy:
           handleCopyMessage(getListAdapter().getSelectedItems());
@@ -1086,6 +1087,7 @@ public class ConversationFragment extends Fragment
     }
 
     public void show() {
+      Log.d(TAG, ">>show() called. textView text: " + textView.getText().toString());
       if (pendingHide) {
         pendingHide = false;
       } else {

@@ -445,6 +445,7 @@ public class ConversationItem extends LinearLayout
 
       bodyText.setText(styledText);
       bodyText.setVisibility(View.VISIBLE);
+      Log.d(TAG, ">> setBodyText() called. bodyText: " + bodyText.getText().toString());
     }
   }
 

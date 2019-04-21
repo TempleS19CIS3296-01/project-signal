@@ -1247,6 +1247,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     Log.d(LOG_TAG, "setBackgroundImage() called with URL " + url.toString());
     Toast.makeText(ConversationActivity.this, "Entered " + url.toString(), Toast.LENGTH_SHORT).show();
 
+    // TODO currently nonfunctional
     closeKeyboard();
 
     ImageView imageContainer = findViewById(R.id.conversation_background_imageview);
@@ -1260,7 +1261,6 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private void closeKeyboard() {
     InputMethodManager inputManager = (InputMethodManager)this.getSystemService(Context.INPUT_METHOD_SERVICE);
     inputManager.hideSoftInputFromWindow(this.getCurrentFocus().getWindowToken(), 0);
-
   }
 
   ///// Initializers
@@ -2020,6 +2020,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
 
       textSlide = Optional.of(new TextSlide(this, textUri, filename, textData.length));
     }
+    Log.d(LOG_TAG, "getSplitMessage() called. rawText: [" + rawText + "]. bodyText: [" + bodyText +"]");
 
     return new Pair<>(bodyText, textSlide);
   }
@@ -2417,6 +2418,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   }
 
   private void silentlySetComposeText(String text) {
+    Log.d(LOG_TAG, "silentlySetComposeText() called");
     typingTextWatcher.setEnabled(false);
     composeText.setText(text);
     typingTextWatcher.setEnabled(true);
