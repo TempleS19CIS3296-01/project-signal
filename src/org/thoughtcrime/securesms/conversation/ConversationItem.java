@@ -463,7 +463,6 @@ public class ConversationItem extends LinearLayout
         bodyText.setOverflowText(null);
       }
 
-
       bodyText.setText(styledText);
       bodyText.setVisibility(View.VISIBLE);
       Log.d(TAG, ">> setBodyText() called. context: " + context.getClass().getSimpleName());

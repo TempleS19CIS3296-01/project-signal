@@ -24,6 +24,7 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
@@ -70,6 +71,7 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -216,7 +218,12 @@ import org.thoughtcrime.securesms.util.views.Stub;
 import org.whispersystems.libsignal.InvalidMessageException;
 import org.whispersystems.libsignal.util.guava.Optional;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -329,6 +336,15 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private final DynamicTheme       dynamicTheme    = new DynamicTheme();
   private final DynamicLanguage    dynamicLanguage = new DynamicLanguage();
 
+  private EditText editText;
+  private ImageView imageContainer;
+  private Bitmap bitmap;
+  private File file;
+  private Button getButton;
+  private String urlString;
+  //private URL url;
+  private boolean done;
+
   private Runnable getToastRunnable(String message) {
     return new Runnable() {
       @Override
@@ -365,7 +381,20 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     //Drawable d = getResources().getDrawable(R.drawable.tester);
     //getWindow().getDecorView().setBackgroundDrawable(d);
     //getWindow().getDecorView().setBackgroundColor(color);
-
+    ContextWrapper cw = new ContextWrapper(getApplicationContext());
+    File parentDirectory =  cw.getDir("imageDir", Context.MODE_PRIVATE);
+    System.out.println(parentDirectory);
+    File backgroundFile = new File(parentDirectory, "background.png");
+    if(backgroundFile.exists())
+    {
+      imageContainer = findViewById(R.id.conversation_background_imageview);
+      bitmap = BitmapFactory.decodeFile(backgroundFile.getAbsolutePath());
+      imageContainer.setImageBitmap(bitmap);
+    }
+    else
+    {
+      System.out.println("No Background");
+    }
     fragment = initFragment(R.id.fragment_content, new ConversationFragment(), dynamicLanguage.getCurrentLocale());
 
     initializeReceivers();
@@ -1250,6 +1279,45 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     ChangeBackgroundDialog changeBackgroundDialog = new ChangeBackgroundDialog();
     changeBackgroundDialog.show(getSupportFragmentManager(), CHANGE_BACKGROUND_DIALOG_TAG);
   }
+  private void getImage(URL url) {
+
+    Thread thread = new Thread(new Runnable() {
+      //@Override
+      public void run() {
+        HttpURLConnection connect = null;
+        try {
+          Log.d(LOG_TAG, "Opening connection.");
+          connect = (HttpURLConnection) url.openConnection();
+          connect.setDoInput(true);
+          Log.d("URL", url.toString());
+          connect.connect();
+          InputStream is = connect.getInputStream();
+          bitmap = BitmapFactory.decodeStream(is);
+          OutputStream os = new FileOutputStream(file);
+          bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
+          Log.d(LOG_TAG, "Saving bitmap.");
+          done = true;
+          //I've tried the following:
+          //is.close();
+          //System.setProperty("http.keepAlive","false");
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+
+      }
+    });
+
+    thread.start();
+
+  }
+  private void setImage() {
+    Log.d(LOG_TAG, "Getting bitmap.");
+    bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+    imageContainer.setImageBitmap(bitmap);
+    Log.d(LOG_TAG, "Setting bitmap.");
+    done = false;
+
+  }
 
   @Override
   public void setBackgroundImage(URL url) {
@@ -1259,12 +1327,33 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     // TODO currently nonfunctional
     closeKeyboard();
 
-    ImageView imageContainer = findViewById(R.id.conversation_background_imageview);
-    Picasso.get()
-            .load(url.toString())
-            .fit()
-            .centerCrop()
-            .into(imageContainer);
+    ContextWrapper cw = new ContextWrapper(getApplicationContext());
+    File directory =  cw.getDir("imageDir", Context.MODE_PRIVATE);
+    directory.mkdirs();
+    file = new File(directory, "background.png");
+    if(file.exists())
+    {
+      file.delete();
+    }
+    imageContainer = findViewById(R.id.conversation_background_imageview);
+    done = false;
+    imageContainer.setImageBitmap(null);
+    Log.d(LOG_TAG, "Getting image from URL.");
+    getImage(url);
+    Log.d(LOG_TAG, "Image Retrieved from URL.");
+    while(!done) {
+      Log.d(LOG_TAG, "I'm STUCK.");
+
+    }
+    Log.d(LOG_TAG, "Setting background as image. ");
+    setImage();
+    Log.d(LOG_TAG, "Background set as image. ");
+
+    //Picasso.get()
+      //      .load(url.toString())
+        //    .fit()
+          //  .centerCrop()
+            //.into(imageContainer);
   }
 
   private void closeKeyboard() {
