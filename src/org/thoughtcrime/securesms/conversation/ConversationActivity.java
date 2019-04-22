@@ -251,7 +251,8 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
                InputPanel.MediaListener,
                ComposeText.CursorPositionChangedListener,
                ConversationSearchBottomBar.EventListener,
-               ChangeBackgroundDialog.ChangeBackgroundListener
+               ChangeBackgroundDialog.ChangeBackgroundListener,
+               ConversationItem.BackgroundChangeListener
 
 {
   private static final String LOG_TAG = ">>ConversationActivity";

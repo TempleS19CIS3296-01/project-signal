@@ -403,6 +403,7 @@ public class ConversationFragment extends Fragment
   }
 
   private MessageRecord getSelectedMessageRecord() {
+    Log.d(TAG, ">>getSelectedMessageRecord() called");
     Set<MessageRecord> messageRecords = getListAdapter().getSelectedItems();
 
     if (messageRecords.size() == 1) return messageRecords.iterator().next();
