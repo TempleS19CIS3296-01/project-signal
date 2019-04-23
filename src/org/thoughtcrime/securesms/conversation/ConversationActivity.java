@@ -35,6 +35,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -1310,6 +1311,8 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
       }
     }).start();
   }
+
+  // Uses the image file stored in getFilesDir()
   private synchronized boolean setImage() {
     Log.d(LOG_TAG, "setImage() called");
     //bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
@@ -1317,11 +1320,14 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
 
     File imageFile = new File(getFilesDir(), IMAGE_FILE_NAME);
     if (imageFile.exists()) {
+      getWindow().getDecorView().setBackgroundDrawable(null);
+      getWindow().getDecorView().setBackgroundDrawable(Drawable.createFromPath(imageFile.getAbsolutePath()));
+      /*
       Picasso.get()
               .load(imageFile)
               .fit()
               .centerCrop()
-              .into(imageContainer);
+              .into(imageContainer);*/
       Log.d(LOG_TAG, "setImage(): Setting image.");
       return true;
     } else {
@@ -1348,8 +1354,6 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     if (!downloadSuccess) return;
 
     Log.d(LOG_TAG, "Image Retrieved from URL.");
-
-    imageContainer.setImageBitmap(null);
 
     Log.d(LOG_TAG, "Setting background as image. ");
     setImage();
