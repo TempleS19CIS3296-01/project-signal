@@ -19,7 +19,6 @@ package org.thoughtcrime.securesms.conversation;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -27,6 +26,7 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
@@ -71,8 +71,6 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -233,7 +231,9 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -336,14 +336,12 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private final DynamicTheme       dynamicTheme    = new DynamicTheme();
   private final DynamicLanguage    dynamicLanguage = new DynamicLanguage();
 
-  private EditText editText;
   private ImageView imageContainer;
   private Bitmap bitmap;
-  private File file;
-  private Button getButton;
-  private String urlString;
-  //private URL url;
-  private boolean done;
+  private File imageFile;
+  private String IMAGE_FILE_NAME = "background.png";
+  private CountDownLatch imageDownloadLatch;
+  private boolean downloadSuccess;
 
   private Runnable getToastRunnable(String message) {
     return new Runnable() {
@@ -368,6 +366,9 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     supportRequestWindowFeature(WindowCompat.FEATURE_ACTION_BAR_OVERLAY);
     setContentView(R.layout.conversation_activity);
 
+    //resetLastImageTime();
+    imageContainer = findViewById(R.id.conversation_background_imageview);
+
     TypedArray typedArray = obtainStyledAttributes(new int[] {R.attr.conversation_background});
     int color = typedArray.getColor(0, Color.WHITE);
     typedArray.recycle();
@@ -381,19 +382,11 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     //Drawable d = getResources().getDrawable(R.drawable.tester);
     //getWindow().getDecorView().setBackgroundDrawable(d);
     //getWindow().getDecorView().setBackgroundColor(color);
-    ContextWrapper cw = new ContextWrapper(getApplicationContext());
-    File parentDirectory =  cw.getDir("imageDir", Context.MODE_PRIVATE);
-    System.out.println(parentDirectory);
-    File backgroundFile = new File(parentDirectory, "background.png");
-    if(backgroundFile.exists())
-    {
-      imageContainer = findViewById(R.id.conversation_background_imageview);
-      bitmap = BitmapFactory.decodeFile(backgroundFile.getAbsolutePath());
-      imageContainer.setImageBitmap(bitmap);
-    }
-    else
-    {
-      System.out.println("No Background");
+
+    if(setImage()) {
+      Log.d(LOG_TAG, "onCreate(): Image file " + IMAGE_FILE_NAME + " found, setting.");
+    } else {
+      Log.d(LOG_TAG, "onCreate(): Image file " + IMAGE_FILE_NAME + " does not exist.");
     }
     fragment = initFragment(R.id.fragment_content, new ConversationFragment(), dynamicLanguage.getCurrentLocale());
 
@@ -782,7 +775,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     super.onOptionsItemSelected(item);
 
     Log.d(LOG_TAG, "onOptionsItemSelected() called");
-    Toast.makeText(this, "You selected " + getResources().getResourceEntryName(item.getItemId()), Toast.LENGTH_SHORT).show();
+    //Toast.makeText(this, "You selected " + getResources().getResourceEntryName(item.getItemId()), Toast.LENGTH_SHORT).show();
 
     switch (item.getItemId()) {
     case R.id.menu_call_secure:               handleDial(getRecipient(), true);                  return true;
@@ -1281,70 +1274,83 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   }
   private void getImage(URL url) {
 
-    Thread thread = new Thread(new Runnable() {
-      //@Override
+    new Thread(new Runnable() {
+      @Override
       public void run() {
-        HttpURLConnection connect = null;
+        HttpURLConnection connection;
         try {
           Log.d(LOG_TAG, "Opening connection.");
-          connect = (HttpURLConnection) url.openConnection();
-          connect.setDoInput(true);
-          Log.d("URL", url.toString());
-          connect.connect();
-          InputStream is = connect.getInputStream();
+          connection = (HttpURLConnection) url.openConnection();
+          connection.setDoInput(true);
+          Log.d(LOG_TAG, "getImage(): URL entered:" + url.toString());
+          connection.connect();
+          Log.d(LOG_TAG, "getImage(): connected");
+          InputStream is = connection.getInputStream();
           bitmap = BitmapFactory.decodeStream(is);
-          OutputStream os = new FileOutputStream(file);
+
+          File directory = getFilesDir();
+          imageFile = new File(directory, IMAGE_FILE_NAME);
+          if(imageFile.exists())
+          {
+            deleteFile(IMAGE_FILE_NAME);
+          }
+
+          OutputStream os = new FileOutputStream(imageFile);
           bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
           Log.d(LOG_TAG, "Saving bitmap.");
-          done = true;
           //I've tried the following:
           //is.close();
           //System.setProperty("http.keepAlive","false");
-        } catch (IOException e) {
+          downloadSuccess = true;
+        } catch (Exception e) {
           e.printStackTrace();
+        } finally {
+          imageDownloadLatch.countDown();
         }
-
       }
-    });
-
-    thread.start();
-
+    }).start();
   }
-  private void setImage() {
-    Log.d(LOG_TAG, "Getting bitmap.");
-    bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
-    imageContainer.setImageBitmap(bitmap);
-    Log.d(LOG_TAG, "Setting bitmap.");
-    done = false;
+  private synchronized boolean setImage() {
+    Log.d(LOG_TAG, "setImage() called");
+    //bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+    //imageContainer.setImageBitmap(bitmap);
 
+    File imageFile = new File(getFilesDir(), IMAGE_FILE_NAME);
+    if (imageFile.exists()) {
+      Picasso.get()
+              .load(imageFile)
+              .fit()
+              .centerCrop()
+              .into(imageContainer);
+      Log.d(LOG_TAG, "setImage(): Setting image.");
+      return true;
+    } else {
+      Log.d(LOG_TAG, "setImage(): No image found.");
+      return false;
+    }
   }
 
   @Override
-  public void setBackgroundImage(URL url) {
+  public synchronized void setBackgroundImage(URL url) {
     Log.d(LOG_TAG, "setBackgroundImage() called with URL " + url.toString());
-    Toast.makeText(ConversationActivity.this, "Entered " + url.toString(), Toast.LENGTH_SHORT).show();
 
-    // TODO currently nonfunctional
-    closeKeyboard();
-
-    ContextWrapper cw = new ContextWrapper(getApplicationContext());
-    File directory =  cw.getDir("imageDir", Context.MODE_PRIVATE);
-    directory.mkdirs();
-    file = new File(directory, "background.png");
-    if(file.exists())
-    {
-      file.delete();
+    imageDownloadLatch = new CountDownLatch(1);
+    downloadSuccess = false;
+    try {
+      Log.d(LOG_TAG, "Getting image from URL.");
+      getImage(url);
+      imageDownloadLatch.await(10, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      Log.d(LOG_TAG, "setBackgroundImage(): Exception in image download block");
+      e.printStackTrace();
     }
-    imageContainer = findViewById(R.id.conversation_background_imageview);
-    done = false;
-    imageContainer.setImageBitmap(null);
-    Log.d(LOG_TAG, "Getting image from URL.");
-    getImage(url);
+
+    if (!downloadSuccess) return;
+
     Log.d(LOG_TAG, "Image Retrieved from URL.");
-    while(!done) {
-      Log.d(LOG_TAG, "I'm STUCK.");
 
-    }
+    imageContainer.setImageBitmap(null);
+
     Log.d(LOG_TAG, "Setting background as image. ");
     setImage();
     Log.d(LOG_TAG, "Background set as image. ");
@@ -1356,10 +1362,12 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
             //.into(imageContainer);
   }
 
-  private void closeKeyboard() {
-    InputMethodManager inputManager = (InputMethodManager)this.getSystemService(Context.INPUT_METHOD_SERVICE);
-    inputManager.hideSoftInputFromWindow(this.getCurrentFocus().getWindowToken(), 0);
+  private void resetLastImageTime() {
+    SharedPreferences prefs = getSharedPreferences(ConversationItem.SHARED_PREFS, Context.MODE_PRIVATE);
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putLong(ConversationItem.SHARED_PREFS_TIMESTAMP, 0).apply();
   }
+
 
   ///// Initializers
 
