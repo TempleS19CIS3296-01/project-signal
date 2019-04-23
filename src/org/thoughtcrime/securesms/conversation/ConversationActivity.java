@@ -383,18 +383,19 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     //Drawable d = getResources().getDrawable(R.drawable.tester);
     //getWindow().getDecorView().setBackgroundDrawable(d);
     //getWindow().getDecorView().setBackgroundColor(color);
-
-    if(setImage()) {
-      Log.d(LOG_TAG, "onCreate(): Image file " + IMAGE_FILE_NAME + " found, setting.");
-    } else {
-      Log.d(LOG_TAG, "onCreate(): Image file " + IMAGE_FILE_NAME + " does not exist.");
-    }
     fragment = initFragment(R.id.fragment_content, new ConversationFragment(), dynamicLanguage.getCurrentLocale());
 
     initializeReceivers();
     initializeActionBar();
     initializeViews();
     initializeResources();
+
+    if(setImage()) {
+      Log.d(LOG_TAG, "Startup: Image file " + IMAGE_FILE_NAME + " found, setting.");
+    } else {
+      Log.d(LOG_TAG, "startup: Image file " + IMAGE_FILE_NAME + " does not exist.");
+    }
+
     initializeLinkPreviewObserver();
     initializeSearchObserver();
     initializeSecurity(false, isDefaultSms).addListener(new AssertedSuccessListener<Boolean>() {
