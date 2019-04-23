@@ -292,21 +292,21 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private static final int SMS_DEFAULT         = 11;
   private static final int MEDIA_SENDER        = 12;
 
-  private   GlideRequests              glideRequests;
-  protected ComposeText                composeText;
-  private   AnimatingToggle            buttonToggle;
-  private   SendButton                 sendButton;
-  private   ImageButton                attachButton;
-  protected ConversationTitleView      titleView;
-  private   TextView                   charactersLeft;
-  private   ConversationFragment       fragment;
-  private   Button                     unblockButton;
-  private   Button                     makeDefaultSmsButton;
-  private   Button                     registerButton;
-  private   InputAwareLayout           container;
-  private   View                       composePanel;
-  protected Stub<ReminderView>         reminderView;
-  private   Stub<UnverifiedBannerView> unverifiedBannerView;
+  private   GlideRequests               glideRequests;
+  protected ComposeText                 composeText;
+  private   AnimatingToggle             buttonToggle;
+  private   SendButton                  sendButton;
+  private   ImageButton                 attachButton;
+  protected ConversationTitleView       titleView;
+  private   TextView                    charactersLeft;
+  private   ConversationFragment        fragment;
+  private   Button                      unblockButton;
+  private   Button                      makeDefaultSmsButton;
+  private   Button                      registerButton;
+  private   InputAwareLayout            container;
+  private   View                        composePanel;
+  protected Stub<ReminderView>          reminderView;
+  private   Stub<UnverifiedBannerView>  unverifiedBannerView;
   private   Stub<GroupShareProfileView> groupShareProfileView;
   private   TypingStatusTextWatcher     typingTextWatcher;
   private   ConversationSearchBottomBar searchNav;
@@ -343,13 +343,14 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private String IMAGE_FILE_NAME = "background.png";
   private CountDownLatch imageDownloadLatch;
   private boolean downloadSuccess;
+  private static final int downloadImageTimeout = 30; // seconds
 
   private Runnable getToastRunnable(String message) {
     return new Runnable() {
       @Override
       public void run() {
         Log.d(LOG_TAG, "Toast runnable posted");
-        Toast.makeText(ConversationActivity.this, message, Toast.LENGTH_SHORT);
+        Toast.makeText(ConversationActivity.this, message, Toast.LENGTH_SHORT).show();
       }
     };
   }
@@ -384,7 +385,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     //getWindow().getDecorView().setBackgroundDrawable(d);
     //getWindow().getDecorView().setBackgroundColor(color);
 
-    if(setImage()) {
+    if(setImage(false)) {
       Log.d(LOG_TAG, "onCreate(): Image file " + IMAGE_FILE_NAME + " found, setting.");
     } else {
       Log.d(LOG_TAG, "onCreate(): Image file " + IMAGE_FILE_NAME + " does not exist.");
@@ -650,7 +651,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   @Override
   public boolean onPrepareOptionsMenu(Menu menu) {
 
-    Log.d(LOG_TAG, "onPrepareOptionsMenu() called");
+    Log.d(LOG_TAG, "onPrepareOptionsMenu() called. threadId: " + threadId);
     //Toast.makeText(this, "Menu prepared", Toast.LENGTH_SHORT).show();
 
     MenuInflater inflater = this.getMenuInflater();
@@ -1313,7 +1314,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   }
 
   // Uses the image file stored in getFilesDir()
-  private synchronized boolean setImage() {
+  private synchronized boolean setImage(boolean newImage) {
     Log.d(LOG_TAG, "setImage() called");
     //bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
     //imageContainer.setImageBitmap(bitmap);
@@ -1329,6 +1330,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
               .centerCrop()
               .into(imageContainer);*/
       Log.d(LOG_TAG, "setImage(): Setting image.");
+      if (newImage) Toast.makeText(ConversationActivity.this, "Image set", Toast.LENGTH_SHORT).show();
       return true;
     } else {
       Log.d(LOG_TAG, "setImage(): No image found.");
@@ -1337,7 +1339,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   }
 
   @Override
-  public synchronized void setBackgroundImage(URL url) {
+  public synchronized void setBackgroundImage(URL url, boolean newImage) {
     Log.d(LOG_TAG, "setBackgroundImage() called with URL " + url.toString());
 
     imageDownloadLatch = new CountDownLatch(1);
@@ -1345,7 +1347,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     try {
       Log.d(LOG_TAG, "Getting image from URL.");
       getImage(url);
-      imageDownloadLatch.await(10, TimeUnit.SECONDS);
+      imageDownloadLatch.await(downloadImageTimeout, TimeUnit.SECONDS);
     } catch (Exception e) {
       Log.d(LOG_TAG, "setBackgroundImage(): Exception in image download block");
       e.printStackTrace();
@@ -1356,7 +1358,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     Log.d(LOG_TAG, "Image Retrieved from URL.");
 
     Log.d(LOG_TAG, "Setting background as image. ");
-    setImage();
+    setImage(newImage);
     Log.d(LOG_TAG, "Background set as image. ");
 
     //Picasso.get()

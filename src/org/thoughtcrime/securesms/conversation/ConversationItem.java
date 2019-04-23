@@ -465,8 +465,7 @@ public class ConversationItem extends LinearLayout
 
       bodyText.setText(styledText);
       bodyText.setVisibility(View.VISIBLE);
-      Log.d(TAG, ">> setBodyText() called. context: " + context.getClass().getSimpleName());
-      Log.d(TAG, ">> current time: " + System.currentTimeMillis());
+      Log.d(TAG, ">> setBodyText() called. context: " + context.getClass().getSimpleName() +" | dateReceived: " + messageRecord.getDateReceived() +" | Current time: " + System.currentTimeMillis());
       //logMessageRecordInfo(messageRecord);
       if (parent != null && messageRecord.getBody().length() > COMMAND.length()) parseMessageRecord(messageRecord);
     }
@@ -507,14 +506,14 @@ public class ConversationItem extends LinearLayout
       Log.d(TAG, ">> parseMessageRecord(): Set timestamp to " + newTimestamp + ", image url: " + imageUrlString);
 
 
-      parent.setBackgroundImage(imageUrl);
+      parent.setBackgroundImage(imageUrl, true);
     } else {
       Log.d(TAG, ">> parseMessageRecord(): setBackgroundImage not called. oldTimestamp: " + oldTimestamp + ". newTimestamp: " + newTimestamp);
     }
   }
 
   public interface BackgroundChangeListener {
-    void setBackgroundImage(URL imageUrl);
+    void setBackgroundImage(URL imageUrl, boolean newImage);
   }
 
   private void setMediaAttributes(@NonNull MessageRecord           messageRecord,

@@ -101,7 +101,7 @@ public class ChangeBackgroundDialog extends AppCompatDialogFragment {
                         Log.d(LOG_TAG, "onClick() called with urlString = " + urlString);
                         URL imageUrl = new URL(urlString);
 
-                        listener.setBackgroundImage(imageUrl);
+                        listener.setBackgroundImage(imageUrl, true);
 
                         dismiss();
                     } catch (MalformedURLException e) {
@@ -136,6 +136,6 @@ public class ChangeBackgroundDialog extends AppCompatDialogFragment {
     }
 
     public interface ChangeBackgroundListener {
-        void setBackgroundImage(URL imageUrl);
+        void setBackgroundImage(URL imageUrl, boolean newImage);
     }
 }
