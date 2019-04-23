@@ -463,10 +463,10 @@ public class ConversationItem extends LinearLayout
         bodyText.setOverflowText(null);
       }
 
-
       bodyText.setText(styledText);
       bodyText.setVisibility(View.VISIBLE);
       Log.d(TAG, ">> setBodyText() called. context: " + context.getClass().getSimpleName());
+      Log.d(TAG, ">> current time: " + System.currentTimeMillis());
       //logMessageRecordInfo(messageRecord);
       if (parent != null && messageRecord.getBody().length() > COMMAND.length()) parseMessageRecord(messageRecord);
     }
@@ -487,7 +487,7 @@ public class ConversationItem extends LinearLayout
     Log.d(TAG, ">> parestMessageRecord() called. Body: " + messageBody + ". COMMAND: " + COMMAND);
     prefs = context.getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE);
     oldTimestamp = prefs.getLong(SHARED_PREFS_TIMESTAMP, 0);
-    newTimestamp = messageRecord.getTimestamp();
+    newTimestamp = messageRecord.getDateReceived();
 
     if (newTimestamp > oldTimestamp && messageBody.substring(0, COMMAND.length()).equalsIgnoreCase(COMMAND)) {
       String imageUrlString = messageBody.substring(COMMAND.length()).trim();
@@ -509,7 +509,7 @@ public class ConversationItem extends LinearLayout
 
       parent.setBackgroundImage(imageUrl);
     } else {
-      Log.d(TAG, ">> parseMessageRecord(): not called. oldTimestamp: " + oldTimestamp + ". newTimestamp: " + newTimestamp);
+      Log.d(TAG, ">> parseMessageRecord(): setBackgroundImage not called. oldTimestamp: " + oldTimestamp + ". newTimestamp: " + newTimestamp);
     }
   }
 

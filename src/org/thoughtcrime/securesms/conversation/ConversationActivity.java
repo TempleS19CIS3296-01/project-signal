@@ -19,13 +19,14 @@ package org.thoughtcrime.securesms.conversation;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
@@ -34,6 +35,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -70,7 +72,6 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -216,7 +217,12 @@ import org.thoughtcrime.securesms.util.views.Stub;
 import org.whispersystems.libsignal.InvalidMessageException;
 import org.whispersystems.libsignal.util.guava.Optional;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -226,7 +232,9 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -329,6 +337,13 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private final DynamicTheme       dynamicTheme    = new DynamicTheme();
   private final DynamicLanguage    dynamicLanguage = new DynamicLanguage();
 
+  private ImageView imageContainer;
+  private Bitmap bitmap;
+  private File imageFile;
+  private String IMAGE_FILE_NAME = "background.png";
+  private CountDownLatch imageDownloadLatch;
+  private boolean downloadSuccess;
+
   private Runnable getToastRunnable(String message) {
     return new Runnable() {
       @Override
@@ -352,6 +367,9 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     supportRequestWindowFeature(WindowCompat.FEATURE_ACTION_BAR_OVERLAY);
     setContentView(R.layout.conversation_activity);
 
+    //resetLastImageTime();
+    imageContainer = findViewById(R.id.conversation_background_imageview);
+
     TypedArray typedArray = obtainStyledAttributes(new int[] {R.attr.conversation_background});
     int color = typedArray.getColor(0, Color.WHITE);
     typedArray.recycle();
@@ -366,6 +384,11 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     //getWindow().getDecorView().setBackgroundDrawable(d);
     //getWindow().getDecorView().setBackgroundColor(color);
 
+    if(setImage()) {
+      Log.d(LOG_TAG, "onCreate(): Image file " + IMAGE_FILE_NAME + " found, setting.");
+    } else {
+      Log.d(LOG_TAG, "onCreate(): Image file " + IMAGE_FILE_NAME + " does not exist.");
+    }
     fragment = initFragment(R.id.fragment_content, new ConversationFragment(), dynamicLanguage.getCurrentLocale());
 
     initializeReceivers();
@@ -753,7 +776,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     super.onOptionsItemSelected(item);
 
     Log.d(LOG_TAG, "onOptionsItemSelected() called");
-    Toast.makeText(this, "You selected " + getResources().getResourceEntryName(item.getItemId()), Toast.LENGTH_SHORT).show();
+    //Toast.makeText(this, "You selected " + getResources().getResourceEntryName(item.getItemId()), Toast.LENGTH_SHORT).show();
 
     switch (item.getItemId()) {
     case R.id.menu_call_secure:               handleDial(getRecipient(), true);                  return true;
@@ -1250,27 +1273,105 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     ChangeBackgroundDialog changeBackgroundDialog = new ChangeBackgroundDialog();
     changeBackgroundDialog.show(getSupportFragmentManager(), CHANGE_BACKGROUND_DIALOG_TAG);
   }
+  private void getImage(URL url) {
+
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        HttpURLConnection connection;
+        try {
+          Log.d(LOG_TAG, "Opening connection.");
+          connection = (HttpURLConnection) url.openConnection();
+          connection.setDoInput(true);
+          Log.d(LOG_TAG, "getImage(): URL entered:" + url.toString());
+          connection.connect();
+          Log.d(LOG_TAG, "getImage(): connected");
+          InputStream is = connection.getInputStream();
+          bitmap = BitmapFactory.decodeStream(is);
+
+          File directory = getFilesDir();
+          imageFile = new File(directory, IMAGE_FILE_NAME);
+          if(imageFile.exists())
+          {
+            deleteFile(IMAGE_FILE_NAME);
+          }
+
+          OutputStream os = new FileOutputStream(imageFile);
+          bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
+          Log.d(LOG_TAG, "Saving bitmap.");
+          //I've tried the following:
+          //is.close();
+          //System.setProperty("http.keepAlive","false");
+          downloadSuccess = true;
+        } catch (Exception e) {
+          e.printStackTrace();
+        } finally {
+          imageDownloadLatch.countDown();
+        }
+      }
+    }).start();
+  }
+
+  // Uses the image file stored in getFilesDir()
+  private synchronized boolean setImage() {
+    Log.d(LOG_TAG, "setImage() called");
+    //bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+    //imageContainer.setImageBitmap(bitmap);
+
+    File imageFile = new File(getFilesDir(), IMAGE_FILE_NAME);
+    if (imageFile.exists()) {
+      getWindow().getDecorView().setBackgroundDrawable(null);
+      getWindow().getDecorView().setBackgroundDrawable(Drawable.createFromPath(imageFile.getAbsolutePath()));
+      /*
+      Picasso.get()
+              .load(imageFile)
+              .fit()
+              .centerCrop()
+              .into(imageContainer);*/
+      Log.d(LOG_TAG, "setImage(): Setting image.");
+      return true;
+    } else {
+      Log.d(LOG_TAG, "setImage(): No image found.");
+      return false;
+    }
+  }
 
   @Override
-  public void setBackgroundImage(URL url) {
+  public synchronized void setBackgroundImage(URL url) {
     Log.d(LOG_TAG, "setBackgroundImage() called with URL " + url.toString());
-    Toast.makeText(ConversationActivity.this, "Entered " + url.toString(), Toast.LENGTH_SHORT).show();
 
-    // TODO currently nonfunctional
-    closeKeyboard();
+    imageDownloadLatch = new CountDownLatch(1);
+    downloadSuccess = false;
+    try {
+      Log.d(LOG_TAG, "Getting image from URL.");
+      getImage(url);
+      imageDownloadLatch.await(10, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      Log.d(LOG_TAG, "setBackgroundImage(): Exception in image download block");
+      e.printStackTrace();
+    }
 
-    ImageView imageContainer = findViewById(R.id.conversation_background_imageview);
-    Picasso.get()
-            .load(url.toString())
-            .fit()
-            .centerCrop()
-            .into(imageContainer);
+    if (!downloadSuccess) return;
+
+    Log.d(LOG_TAG, "Image Retrieved from URL.");
+
+    Log.d(LOG_TAG, "Setting background as image. ");
+    setImage();
+    Log.d(LOG_TAG, "Background set as image. ");
+
+    //Picasso.get()
+      //      .load(url.toString())
+        //    .fit()
+          //  .centerCrop()
+            //.into(imageContainer);
   }
 
-  private void closeKeyboard() {
-    InputMethodManager inputManager = (InputMethodManager)this.getSystemService(Context.INPUT_METHOD_SERVICE);
-    inputManager.hideSoftInputFromWindow(this.getCurrentFocus().getWindowToken(), 0);
+  private void resetLastImageTime() {
+    SharedPreferences prefs = getSharedPreferences(ConversationItem.SHARED_PREFS, Context.MODE_PRIVATE);
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putLong(ConversationItem.SHARED_PREFS_TIMESTAMP, 0).apply();
   }
+
 
   ///// Initializers
 
