@@ -392,7 +392,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     initializeViews();
     initializeResources();
 
-    if(setImage()) {
+    if(setImage(false)) {
       Log.d(LOG_TAG, "Startup: Image file " + IMAGE_FILE_NAME + " found, setting.");
     } else {
       Log.d(LOG_TAG, "startup: Image file " + IMAGE_FILE_NAME + " does not exist.");
