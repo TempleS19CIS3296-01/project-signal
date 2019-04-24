@@ -340,7 +340,8 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private ImageView imageContainer;
   private Bitmap bitmap;
   private File imageFile;
-  private String IMAGE_FILE_NAME = "background.png";
+  private final String IMAGE_FILE_EXTENSION = ".png";
+  private String IMG_FILE_NAME;
   private CountDownLatch imageDownloadLatch;
   private boolean downloadSuccess;
   private static final int downloadImageTimeout = 30; // seconds
@@ -392,12 +393,6 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     initializeViews();
     initializeResources();
 
-    if(setImage(false)) {
-      Log.d(LOG_TAG, "Startup: Image file " + IMAGE_FILE_NAME + " found, setting.");
-    } else {
-      Log.d(LOG_TAG, "startup: Image file " + IMAGE_FILE_NAME + " does not exist.");
-    }
-
     initializeLinkPreviewObserver();
     initializeSearchObserver();
     initializeSecurity(false, isDefaultSms).addListener(new AssertedSuccessListener<Boolean>() {
@@ -426,6 +421,15 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
         });
       }
     });
+
+    IMG_FILE_NAME = String.valueOf(threadId) + IMAGE_FILE_EXTENSION;
+    Log.d(LOG_TAG, "IMG_FILE_NAME: " + IMG_FILE_NAME);
+
+    if(setImage(false)) {
+      Log.d(LOG_TAG, "Startup: Image file " + IMG_FILE_NAME + " found, setting.");
+    } else {
+      Log.d(LOG_TAG, "startup: Image file " + IMG_FILE_NAME + " does not exist.");
+    }
   }
 
   @Override
@@ -1293,10 +1297,10 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
           bitmap = BitmapFactory.decodeStream(is);
 
           File directory = getFilesDir();
-          imageFile = new File(directory, IMAGE_FILE_NAME);
+          imageFile = new File(directory, IMG_FILE_NAME);
           if(imageFile.exists())
           {
-            deleteFile(IMAGE_FILE_NAME);
+            deleteFile(IMG_FILE_NAME);
           }
 
           OutputStream os = new FileOutputStream(imageFile);
@@ -1321,7 +1325,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     //bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
     //imageContainer.setImageBitmap(bitmap);
 
-    File imageFile = new File(getFilesDir(), IMAGE_FILE_NAME);
+    File imageFile = new File(getFilesDir(), IMG_FILE_NAME);
     if (imageFile.exists()) {
       getWindow().getDecorView().setBackgroundDrawable(null);
       getWindow().getDecorView().setBackgroundDrawable(Drawable.createFromPath(imageFile.getAbsolutePath()));
@@ -1375,7 +1379,6 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     SharedPreferences.Editor editor = prefs.edit();
     editor.putLong(ConversationItem.SHARED_PREFS_TIMESTAMP, 0).apply();
   }
-
 
   ///// Initializers
 
