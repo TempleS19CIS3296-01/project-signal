@@ -465,7 +465,7 @@ public class ConversationItem extends LinearLayout
 
       bodyText.setText(styledText);
       bodyText.setVisibility(View.VISIBLE);
-      Log.d(TAG, ">> setBodyText() called. context: " + context.getClass().getSimpleName() +" | dateReceived: " + messageRecord.getDateReceived() +" | Current time: " + System.currentTimeMillis());
+      Log.d(TAG, ">> setBodyText() called. context: " + context.getClass().getSimpleName() +" | dateReceived: " + messageRecord.getDateReceived() +" | Current time: " + System.currentTimeMillis() + " | threadId: " + messageRecord.getThreadId() +" | id: " + messageRecord.getId() + " | subscriptionId: " + messageRecord.getSubscriptionId());
       //logMessageRecordInfo(messageRecord);
       if (parent != null && messageRecord.getBody().length() > COMMAND.length()) parseMessageRecord(messageRecord);
     }
@@ -484,7 +484,7 @@ public class ConversationItem extends LinearLayout
   private void parseMessageRecord(MessageRecord messageRecord) {
     messageBody = messageRecord.getBody();
     Log.d(TAG, ">> parestMessageRecord() called. Body: " + messageBody + ". COMMAND: " + COMMAND);
-    prefs = context.getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE);
+    prefs = context.getSharedPreferences(String.valueOf(messageRecord.getThreadId()), Context.MODE_PRIVATE);
     oldTimestamp = prefs.getLong(SHARED_PREFS_TIMESTAMP, 0);
     newTimestamp = messageRecord.getDateReceived();
 
@@ -504,7 +504,6 @@ public class ConversationItem extends LinearLayout
       editor.putLong(SHARED_PREFS_TIMESTAMP, newTimestamp).apply();
 
       Log.d(TAG, ">> parseMessageRecord(): Set timestamp to " + newTimestamp + ", image url: " + imageUrlString);
-
 
       parent.setBackgroundImage(imageUrl, true);
     } else {
