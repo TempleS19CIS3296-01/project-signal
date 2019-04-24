@@ -25,19 +25,21 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Vibrator;
 import android.provider.Browser;
 import android.provider.ContactsContract;
@@ -68,6 +70,7 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -210,7 +213,13 @@ import org.thoughtcrime.securesms.util.views.Stub;
 import org.whispersystems.libsignal.InvalidMessageException;
 import org.whispersystems.libsignal.util.guava.Optional;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
@@ -219,7 +228,9 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -243,9 +254,16 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
                InputPanel.Listener,
                InputPanel.MediaListener,
                ComposeText.CursorPositionChangedListener,
-               ConversationSearchBottomBar.EventListener
+               ConversationSearchBottomBar.EventListener,
+               ChangeBackgroundDialog.ChangeBackgroundListener,
+               ConversationItem.BackgroundChangeListener
+
 {
+  private static final String LOG_TAG = ">>ConversationActivity";
   private static final String TAG = ConversationActivity.class.getSimpleName();
+  private Handler handler = new Handler();
+  private static final String CHANGE_BACKGROUND_DIALOG_TAG = "myChangeBackgroundDialogTag";
+
 
   public static final String ADDRESS_EXTRA           = "address";
   public static final String THREAD_ID_EXTRA         = "thread_id";
@@ -270,21 +288,21 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private static final int SMS_DEFAULT         = 11;
   private static final int MEDIA_SENDER        = 12;
 
-  private   GlideRequests              glideRequests;
-  protected ComposeText                composeText;
-  private   AnimatingToggle            buttonToggle;
-  private   SendButton                 sendButton;
-  private   ImageButton                attachButton;
-  protected ConversationTitleView      titleView;
-  private   TextView                   charactersLeft;
-  private   ConversationFragment       fragment;
-  private   Button                     unblockButton;
-  private   Button                     makeDefaultSmsButton;
-  private   Button                     registerButton;
-  private   InputAwareLayout           container;
-  private   View                       composePanel;
-  protected Stub<ReminderView>         reminderView;
-  private   Stub<UnverifiedBannerView> unverifiedBannerView;
+  private   GlideRequests               glideRequests;
+  protected ComposeText                 composeText;
+  private   AnimatingToggle             buttonToggle;
+  private   SendButton                  sendButton;
+  private   ImageButton                 attachButton;
+  protected ConversationTitleView       titleView;
+  private   TextView                    charactersLeft;
+  private   ConversationFragment        fragment;
+  private   Button                      unblockButton;
+  private   Button                      makeDefaultSmsButton;
+  private   Button                      registerButton;
+  private   InputAwareLayout            container;
+  private   View                        composePanel;
+  protected Stub<ReminderView>          reminderView;
+  private   Stub<UnverifiedBannerView>  unverifiedBannerView;
   private   Stub<GroupShareProfileView> groupShareProfileView;
   private   TypingStatusTextWatcher     typingTextWatcher;
   private   ConversationSearchBottomBar searchNav;
@@ -315,6 +333,25 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private final DynamicTheme       dynamicTheme    = new DynamicTheme();
   private final DynamicLanguage    dynamicLanguage = new DynamicLanguage();
 
+  private ImageView imageContainer;
+  private Bitmap bitmap;
+  private File imageFile;
+  private final String IMAGE_FILE_EXTENSION = ".png";
+  private String IMAGE_FILE_NAME;
+  private CountDownLatch imageDownloadLatch;
+  private boolean downloadSuccess;
+  private static final int downloadImageTimeout = 30; // seconds
+
+  private Runnable getToastRunnable(String message) {
+    return new Runnable() {
+      @Override
+      public void run() {
+        Log.d(LOG_TAG, "Toast runnable posted");
+        Toast.makeText(ConversationActivity.this, message, Toast.LENGTH_SHORT).show();
+      }
+    };
+  }
+
   @Override
   protected void onPreCreate() {
     dynamicTheme.onCreate(this);
@@ -328,11 +365,23 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     supportRequestWindowFeature(WindowCompat.FEATURE_ACTION_BAR_OVERLAY);
     setContentView(R.layout.conversation_activity);
 
-    TypedArray typedArray = obtainStyledAttributes(new int[] {R.attr.conversation_background});
-    int color = typedArray.getColor(0, Color.WHITE);
-    typedArray.recycle();
+    //resetLastImageTime();
+    imageContainer = findViewById(R.id.conversation_background_imageview);
 
-    getWindow().getDecorView().setBackgroundColor(color);
+    TypedArray typedArray = obtainStyledAttributes(new int[] {R.attr.conversation_background});
+    //color = typedArray.getColor(0, Color.WHITE);
+
+    typedArray.recycle();
+    //ImageView imageBox = findViewById(R.id.conversation_image_container);
+    //Picasso.get()
+         //.load(url)
+          //.fit()
+           //.centerCrop()
+           //.into(imageBox);
+    //imageBox.setAlpha((float) 0.5);
+    //Drawable d = getResources().getDrawable(R.drawable.tester);
+    //getWindow().getDecorView().setBackgroundDrawable(d);
+    //getWindow().getDecorView().setBackgroundColor(color);
 
     fragment = initFragment(R.id.fragment_content, new ConversationFragment(), dynamicLanguage.getCurrentLocale());
 
@@ -340,6 +389,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     initializeActionBar();
     initializeViews();
     initializeResources();
+
     initializeLinkPreviewObserver();
     initializeSearchObserver();
     initializeSecurity(false, isDefaultSms).addListener(new AssertedSuccessListener<Boolean>() {
@@ -368,6 +418,15 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
         });
       }
     });
+
+    IMAGE_FILE_NAME = String.valueOf(threadId) + IMAGE_FILE_EXTENSION;
+    Log.d(LOG_TAG, "IMAGE_FILE_NAME: " + IMAGE_FILE_NAME);
+
+    if(setImage(false)) {
+      Log.d(LOG_TAG, "Startup: Image file " + IMAGE_FILE_NAME + " found, setting.");
+    } else {
+      Log.d(LOG_TAG, "startup: Image file " + IMAGE_FILE_NAME + " does not exist.");
+    }
   }
 
   @Override
@@ -594,8 +653,14 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
 
   @Override
   public boolean onPrepareOptionsMenu(Menu menu) {
+
+    Log.d(LOG_TAG, "onPrepareOptionsMenu() called. threadId: " + threadId);
+    //Toast.makeText(this, "Menu prepared", Toast.LENGTH_SHORT).show();
+
     MenuInflater inflater = this.getMenuInflater();
     menu.clear();
+
+    inflater.inflate(R.menu.conversation_background, menu);
 
     if (isSecureText) {
       if (recipient.getExpireMessages() > 0) {
@@ -713,6 +778,10 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
     super.onOptionsItemSelected(item);
+
+    Log.d(LOG_TAG, "onOptionsItemSelected() called");
+    //Toast.makeText(this, "You selected " + getResources().getResourceEntryName(item.getItemId()), Toast.LENGTH_SHORT).show();
+
     switch (item.getItemId()) {
     case R.id.menu_call_secure:               handleDial(getRecipient(), true);                  return true;
     case R.id.menu_call_insecure:             handleDial(getRecipient(), false);                 return true;
@@ -732,6 +801,9 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     case R.id.menu_conversation_settings:     handleConversationSettings();                      return true;
     case R.id.menu_expiring_messages_off:
     case R.id.menu_expiring_messages:         handleSelectMessageExpiration();                   return true;
+    case R.id.menu_change_background:                                                            return true;
+    case R.id.menu_new_background:            handleChangeBackground();                          return true;
+    case R.id.menu_clear_background:          handleClearBackground();                           return true;
     case android.R.id.home:                   handleReturnToConversationList();                  return true;
     }
 
@@ -1195,6 +1267,130 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     calculateCharactersRemaining();
     supportInvalidateOptionsMenu();
     setBlockedUserState(recipient, isSecureText, isDefaultSms);
+  }
+
+  private void handleChangeBackground() {
+    Log.d(LOG_TAG, "handleChangeBackground() called");
+    createChangeBackgroundDialog();
+  }
+
+  private void handleClearBackground() {
+    imageFile = new File(getFilesDir(), IMAGE_FILE_NAME);
+    if(imageFile.exists()) {
+      Log.d(LOG_TAG, "handleClearBackground(): Image " + IMAGE_FILE_NAME + " exists, deleting");
+      getWindow().getDecorView().setBackgroundDrawable(null);
+      getWindow().getDecorView().setBackgroundResource(R.color.core_white);
+      deleteFile(IMAGE_FILE_NAME);
+      Toast.makeText(ConversationActivity.this, "Image cleared", Toast.LENGTH_SHORT).show();
+    } else {
+      Log.d(LOG_TAG, "handleClearBackground: Image " + IMAGE_FILE_NAME + " not found, not deleting");
+      Toast.makeText(ConversationActivity.this, "No image has been set", Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  private void createChangeBackgroundDialog() {
+    Log.d(LOG_TAG, "createChangeBackgroundDialog() called");
+    ChangeBackgroundDialog changeBackgroundDialog = new ChangeBackgroundDialog();
+    changeBackgroundDialog.show(getSupportFragmentManager(), CHANGE_BACKGROUND_DIALOG_TAG);
+  }
+  private void getImage(URL url) {
+
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        HttpURLConnection connection;
+        try {
+          Log.d(LOG_TAG, "Opening connection.");
+          connection = (HttpURLConnection) url.openConnection();
+          connection.setDoInput(true);
+          Log.d(LOG_TAG, "getImage(): URL entered:" + url.toString());
+          connection.connect();
+          Log.d(LOG_TAG, "getImage(): connected");
+          InputStream is = connection.getInputStream();
+          bitmap = BitmapFactory.decodeStream(is);
+
+          File directory = getFilesDir();
+          imageFile = new File(directory, IMAGE_FILE_NAME);
+          if(imageFile.exists())
+          {
+            deleteFile(IMAGE_FILE_NAME);
+          }
+
+          OutputStream os = new FileOutputStream(imageFile);
+          bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
+          Log.d(LOG_TAG, "Saving bitmap.");
+          //I've tried the following:
+          //is.close();
+          //System.setProperty("http.keepAlive","false");
+          downloadSuccess = true;
+        } catch (Exception e) {
+          e.printStackTrace();
+        } finally {
+          imageDownloadLatch.countDown();
+        }
+      }
+    }).start();
+  }
+
+  // Uses the image file stored in getFilesDir()
+  private synchronized boolean setImage(boolean newImage) {
+    Log.d(LOG_TAG, "setImage() called");
+    //bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+    //imageContainer.setImageBitmap(bitmap);
+
+    File imageFile = new File(getFilesDir(), IMAGE_FILE_NAME);
+    if (imageFile.exists()) {
+      getWindow().getDecorView().setBackgroundDrawable(null);
+      getWindow().getDecorView().setBackgroundDrawable(Drawable.createFromPath(imageFile.getAbsolutePath()));
+      /*
+      Picasso.get()
+              .load(imageFile)
+              .fit()
+              .centerCrop()
+              .into(imageContainer);*/
+      Log.d(LOG_TAG, "setImage(): Setting image.");
+      if (newImage) Toast.makeText(ConversationActivity.this, "Image set", Toast.LENGTH_SHORT).show();
+      return true;
+    } else {
+      Log.d(LOG_TAG, "setImage(): No image found.");
+      return false;
+    }
+  }
+
+  @Override
+  public synchronized void setBackgroundImage(URL url, boolean newImage) {
+    Log.d(LOG_TAG, "setBackgroundImage() called with URL " + url.toString());
+
+    imageDownloadLatch = new CountDownLatch(1);
+    downloadSuccess = false;
+    try {
+      Log.d(LOG_TAG, "Getting image from URL.");
+      getImage(url);
+      imageDownloadLatch.await(downloadImageTimeout, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      Log.d(LOG_TAG, "setBackgroundImage(): Exception in image download block");
+      e.printStackTrace();
+    }
+
+    if (!downloadSuccess) return;
+
+    Log.d(LOG_TAG, "Image Retrieved from URL.");
+
+    Log.d(LOG_TAG, "Setting background as image. ");
+    setImage(newImage);
+    Log.d(LOG_TAG, "Background set as image. ");
+
+    //Picasso.get()
+      //      .load(url.toString())
+        //    .fit()
+          //  .centerCrop()
+            //.into(imageContainer);
+  }
+
+  private void resetLastImageTime() {
+    SharedPreferences prefs = getSharedPreferences(ConversationItem.SHARED_PREFS, Context.MODE_PRIVATE);
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putLong(ConversationItem.SHARED_PREFS_TIMESTAMP, 0).apply();
   }
 
   ///// Initializers
@@ -1954,6 +2150,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
 
       textSlide = Optional.of(new TextSlide(this, textUri, filename, textData.length));
     }
+    Log.d(LOG_TAG, "getSplitMessage() called. rawText: [" + rawText + "]. bodyText: [" + bodyText +"]");
 
     return new Pair<>(bodyText, textSlide);
   }
@@ -2351,6 +2548,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   }
 
   private void silentlySetComposeText(String text) {
+    Log.d(LOG_TAG, "silentlySetComposeText() called");
     typingTextWatcher.setEnabled(false);
     composeText.setText(text);
     typingTextWatcher.setEnabled(true);

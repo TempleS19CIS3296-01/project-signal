@@ -56,6 +56,7 @@ import org.thoughtcrime.securesms.permissions.Permissions;
 import org.thoughtcrime.securesms.recipients.Recipient;
 import org.thoughtcrime.securesms.search.SearchFragment;
 import org.thoughtcrime.securesms.service.KeyCachingService;
+import org.thoughtcrime.securesms.service.SmsSentListener;
 import org.thoughtcrime.securesms.util.DynamicLanguage;
 import org.thoughtcrime.securesms.util.DynamicNoActionBarTheme;
 import org.thoughtcrime.securesms.util.DynamicTheme;
@@ -109,6 +110,8 @@ public class ConversationListActivity extends PassphraseRequiredActionBarActivit
   @Override
   public void onResume() {
     super.onResume();
+    // TODO Make the service run without the applioation running
+    startService(new Intent(this, SmsSentListener.class));
     dynamicTheme.onResume(this);
     dynamicLanguage.onResume(this);
 

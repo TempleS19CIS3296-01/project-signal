@@ -156,6 +156,7 @@ dependencies {
     }
     testImplementation 'org.robolectric:robolectric:4.2'
     testImplementation 'org.robolectric:shadows-multidex:4.2'
+    implementation 'com.squareup.picasso:picasso:2.71828'
 }
 
 dependencyVerification {

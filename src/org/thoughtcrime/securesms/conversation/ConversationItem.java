@@ -20,6 +20,7 @@ import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -108,6 +109,8 @@ import org.thoughtcrime.securesms.util.ViewUtil;
 import org.thoughtcrime.securesms.util.views.Stub;
 import org.whispersystems.libsignal.util.guava.Optional;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -169,6 +172,17 @@ public class ConversationItem extends LinearLayout
 
   private final Context context;
 
+  public static final String COMMAND = "!setimage";
+  public static final String SHARED_PREFS = "shared_prefs";
+  public static final String SHARED_PREFS_TIMESTAMP = "shared_prefs_timestamp";
+  private BackgroundChangeListener parent;
+  private SharedPreferences prefs;
+  private SharedPreferences.Editor editor;
+  private long oldTimestamp;
+  private long newTimestamp;
+  String messageBody;
+  URL imageUrl = null;
+
   public ConversationItem(Context context) {
     this(context, null);
   }
@@ -212,6 +226,12 @@ public class ConversationItem extends LinearLayout
     bodyText.setOnClickListener(passthroughClickListener);
 
     bodyText.setMovementMethod(LongClickMovementMethod.getInstance(getContext()));
+
+    if (context instanceof BackgroundChangeListener) {
+      parent = (BackgroundChangeListener) context;
+    } else {
+      parent = null;
+    }
   }
 
   @Override
@@ -445,7 +465,54 @@ public class ConversationItem extends LinearLayout
 
       bodyText.setText(styledText);
       bodyText.setVisibility(View.VISIBLE);
+      Log.d(TAG, ">> setBodyText() called. context: " + context.getClass().getSimpleName() +" | dateReceived: " + messageRecord.getDateReceived() +" | Current time: " + System.currentTimeMillis() + " | threadId: " + messageRecord.getThreadId() +" | id: " + messageRecord.getId() + " | subscriptionId: " + messageRecord.getSubscriptionId());
+      //logMessageRecordInfo(messageRecord);
+      if (parent != null && messageRecord.getBody().length() > COMMAND.length()) parseMessageRecord(messageRecord);
     }
+  }
+
+  private void logMessageRecordInfo(MessageRecord messageRecord) {
+    Log.d(TAG, ">> logMessageRecordInfo(): ");
+    Log.d(TAG, ">> logMessageRecordInfo(): messageRecord.getBody(): " + messageRecord.getBody());
+    Log.d(TAG, ">> logMessageRecordInfo(): messageRecord.getId(): " + messageRecord.getId());
+    Log.d(TAG, ">> logMessageRecordInfo(): messageRecord.getTimestamp(): " + messageRecord.getTimestamp());
+    Log.d(TAG, ">> logMessageRecordInfo(): messageRecord.getDateReceived(): " + messageRecord.getDateReceived());
+    Log.d(TAG, ">> logMessageRecordInfo(): messageRecord.getThreadId(): " + messageRecord.getThreadId());
+    Log.d(TAG, ">> logMessageRecordInfo(): messageRecord.getDateSent(): " + messageRecord.getDateSent());
+  }
+
+  private void parseMessageRecord(MessageRecord messageRecord) {
+    messageBody = messageRecord.getBody();
+    Log.d(TAG, ">> parestMessageRecord() called. Body: " + messageBody + ". COMMAND: " + COMMAND);
+    prefs = context.getSharedPreferences(String.valueOf(messageRecord.getThreadId()), Context.MODE_PRIVATE);
+    oldTimestamp = prefs.getLong(SHARED_PREFS_TIMESTAMP, 0);
+    newTimestamp = messageRecord.getDateReceived();
+
+    if (newTimestamp > oldTimestamp && messageBody.substring(0, COMMAND.length()).equalsIgnoreCase(COMMAND)) {
+      String imageUrlString = messageBody.substring(COMMAND.length()).trim();
+
+      try {
+        imageUrl = new URL(imageUrlString);
+      } catch (MalformedURLException e) {
+        Log.d(TAG, ">> parseMessageRecord(): Caught MalformedURLException");
+        e.printStackTrace();
+        //Toast.makeText(context, "Invalid URL", Toast.LENGTH_SHORT).show();
+        return;
+      }
+
+      editor = prefs.edit();
+      editor.putLong(SHARED_PREFS_TIMESTAMP, newTimestamp).apply();
+
+      Log.d(TAG, ">> parseMessageRecord(): Set timestamp to " + newTimestamp + ", image url: " + imageUrlString);
+
+      parent.setBackgroundImage(imageUrl, true);
+    } else {
+      Log.d(TAG, ">> parseMessageRecord(): setBackgroundImage not called. oldTimestamp: " + oldTimestamp + ". newTimestamp: " + newTimestamp);
+    }
+  }
+
+  public interface BackgroundChangeListener {
+    void setBackgroundImage(URL imageUrl, boolean newImage);
   }
 
   private void setMediaAttributes(@NonNull MessageRecord           messageRecord,
