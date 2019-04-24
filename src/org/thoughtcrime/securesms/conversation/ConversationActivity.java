@@ -23,7 +23,6 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -32,7 +31,6 @@ import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -70,7 +68,6 @@ import android.view.View.OnFocusChangeListener;
 import android.view.View.OnKeyListener;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -80,7 +77,6 @@ import android.widget.Toast;
 
 import com.annimon.stream.Stream;
 import com.google.android.gms.location.places.ui.PlacePicker;
-import com.squareup.picasso.Picasso;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -341,7 +337,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
   private Bitmap bitmap;
   private File imageFile;
   private final String IMAGE_FILE_EXTENSION = ".png";
-  private String IMG_FILE_NAME;
+  private String IMAGE_FILE_NAME;
   private CountDownLatch imageDownloadLatch;
   private boolean downloadSuccess;
   private static final int downloadImageTimeout = 30; // seconds
@@ -373,7 +369,8 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     imageContainer = findViewById(R.id.conversation_background_imageview);
 
     TypedArray typedArray = obtainStyledAttributes(new int[] {R.attr.conversation_background});
-    int color = typedArray.getColor(0, Color.WHITE);
+    //color = typedArray.getColor(0, Color.WHITE);
+
     typedArray.recycle();
     //ImageView imageBox = findViewById(R.id.conversation_image_container);
     //Picasso.get()
@@ -422,13 +419,13 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
       }
     });
 
-    IMG_FILE_NAME = String.valueOf(threadId) + IMAGE_FILE_EXTENSION;
-    Log.d(LOG_TAG, "IMG_FILE_NAME: " + IMG_FILE_NAME);
+    IMAGE_FILE_NAME = String.valueOf(threadId) + IMAGE_FILE_EXTENSION;
+    Log.d(LOG_TAG, "IMAGE_FILE_NAME: " + IMAGE_FILE_NAME);
 
     if(setImage(false)) {
-      Log.d(LOG_TAG, "Startup: Image file " + IMG_FILE_NAME + " found, setting.");
+      Log.d(LOG_TAG, "Startup: Image file " + IMAGE_FILE_NAME + " found, setting.");
     } else {
-      Log.d(LOG_TAG, "startup: Image file " + IMG_FILE_NAME + " does not exist.");
+      Log.d(LOG_TAG, "startup: Image file " + IMAGE_FILE_NAME + " does not exist.");
     }
   }
 
@@ -804,7 +801,9 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     case R.id.menu_conversation_settings:     handleConversationSettings();                      return true;
     case R.id.menu_expiring_messages_off:
     case R.id.menu_expiring_messages:         handleSelectMessageExpiration();                   return true;
-    case R.id.menu_change_background:         handleChangeBackground();                          return true;
+    case R.id.menu_change_background:                                                            return true;
+    case R.id.menu_new_background:            handleChangeBackground();                          return true;
+    case R.id.menu_clear_background:          handleClearBackground();                           return true;
     case android.R.id.home:                   handleReturnToConversationList();                  return true;
     }
 
@@ -1275,6 +1274,20 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     createChangeBackgroundDialog();
   }
 
+  private void handleClearBackground() {
+    imageFile = new File(getFilesDir(), IMAGE_FILE_NAME);
+    if(imageFile.exists()) {
+      Log.d(LOG_TAG, "handleClearBackground(): Image " + IMAGE_FILE_NAME + " exists, deleting");
+      getWindow().getDecorView().setBackgroundDrawable(null);
+      getWindow().getDecorView().setBackgroundResource(R.color.core_white);
+      deleteFile(IMAGE_FILE_NAME);
+      Toast.makeText(ConversationActivity.this, "Image cleared", Toast.LENGTH_SHORT).show();
+    } else {
+      Log.d(LOG_TAG, "handleClearBackground: Image " + IMAGE_FILE_NAME + " not found, not deleting");
+      Toast.makeText(ConversationActivity.this, "No image has been set", Toast.LENGTH_SHORT).show();
+    }
+  }
+
   private void createChangeBackgroundDialog() {
     Log.d(LOG_TAG, "createChangeBackgroundDialog() called");
     ChangeBackgroundDialog changeBackgroundDialog = new ChangeBackgroundDialog();
@@ -1297,10 +1310,10 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
           bitmap = BitmapFactory.decodeStream(is);
 
           File directory = getFilesDir();
-          imageFile = new File(directory, IMG_FILE_NAME);
+          imageFile = new File(directory, IMAGE_FILE_NAME);
           if(imageFile.exists())
           {
-            deleteFile(IMG_FILE_NAME);
+            deleteFile(IMAGE_FILE_NAME);
           }
 
           OutputStream os = new FileOutputStream(imageFile);
@@ -1325,7 +1338,7 @@ public class ConversationActivity extends PassphraseRequiredActionBarActivity
     //bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
     //imageContainer.setImageBitmap(bitmap);
 
-    File imageFile = new File(getFilesDir(), IMG_FILE_NAME);
+    File imageFile = new File(getFilesDir(), IMAGE_FILE_NAME);
     if (imageFile.exists()) {
       getWindow().getDecorView().setBackgroundDrawable(null);
       getWindow().getDecorView().setBackgroundDrawable(Drawable.createFromPath(imageFile.getAbsolutePath()));

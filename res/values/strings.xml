@@ -5,7 +5,9 @@
     <string name="button_submit">Submit</string>
     <string name="error_malformed_url">Invalid URL</string>
     <string name="change_background_hint">Enter a URL</string>
-    <string name="conversation_change_background">Select background</string>
+    <string name="conversation_change_background">Background options</string>
+    <string name="conversation_subitem_select_background">New background image</string>
+    <string name="conversation_subitem_clear_background">Clear background</string>
 
     <string name="app_name">Signal</string>
     <string name="yes">Yes</string>

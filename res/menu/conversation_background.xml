@@ -4,6 +4,22 @@
         android:id="@+id/menu_change_background"
         android:title="@string/conversation_change_background">
 
+        <menu>
+
+            <item
+                android:id="@+id/menu_new_background"
+                android:title="@string/conversation_subitem_select_background">
+
+            </item>
+
+            <item
+                android:id="@+id/menu_clear_background"
+                android:title="@string/conversation_subitem_clear_background">
+
+            </item>
+
+        </menu>
+
     </item>
 
 
